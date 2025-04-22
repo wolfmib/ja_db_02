@@ -6,6 +6,12 @@ WORKDIR /app
 # Install system dependencies (including git)
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
+
+# Set Git identity for auto commits
+RUN git config --global user.name "wolfmib" && \
+    git config --global user.email "wolfmib@gmail.com"
+
+
 # Copy your repo files into the container
 COPY . .
 
