@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import subprocess
 from datetime import datetime
 from google.oauth2.credentials import Credentials
@@ -8,11 +7,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# === Configuration ===
+# === Google Drive Setup ===
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
 
 # === Get Google Drive Service ===
 def get_drive_service():
@@ -75,16 +73,14 @@ def upload_commit_log(service, log_data):
     service.files().create(body=file_metadata, media_body=media).execute()
     print(f"✅ Uploaded commit log: {log_filename}")
 
-# === Main Loop ===
+# === Main Runner ===
 if __name__ == "__main__":
-    service = get_drive_service()
-    while True:
-        try:
-            commit_log = auto_git_commit()
-            upload_commit_log(service, commit_log)
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Git command failed: {e}")
-        except Exception as ex:
-            print(f"❌ Unexpected error: {ex}")
-        time.sleep(COMMIT_INTERVAL_MINUTES * 60)
+    try:
+        service = get_drive_service()
+        commit_log = auto_git_commit()
+        upload_commit_log(service, commit_log)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Git command failed: {e}")
+    except Exception as ex:
+        print(f"❌ Unexpected error: {ex}")
 
