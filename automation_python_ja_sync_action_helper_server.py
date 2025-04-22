@@ -15,7 +15,7 @@ import io
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CLIENT_SECRET_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-CHECK_INTERVAL_MINUTES = 11
+CHECK_INTERVAL_MINUTES = 31
 LOCAL_CLIENTS_JSON = 'latest_clients.json'
 LOCAL_HEALTH_LOG = 'health_helper_server.json'
 
