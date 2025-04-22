@@ -11,15 +11,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  automation:
-    build: .
-    env_file:
-      - .env
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-
 volumes:
   pgdata:
 

@@ -8,6 +8,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+
+
 # === Configuration ===
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
@@ -30,6 +32,20 @@ def get_drive_service():
 def auto_git_commit():
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     commit_msg = f"automation updated at {now_str}"
+
+
+    # load github credential
+    github_user = os.getenv("GITHUB_USER")
+    github_token = os.getenv("GITHUB_TOKEN")
+    github_repo = os.getenv("GITHUB_REPO")  # Must be the full URL like h
+
+    if not (github_user and github_token and github_repo):
+        raise Exception("❌ Missing GITHUB_USER, GITHUB_TOKEN, or GITHUB_REPO in environment.")
+
+    # Inject HTTPS URL with token
+    secure_url = github_repo.replace("https://", f"https://{github_user}:{github_token}@")
+    subprocess.run(["git", "remote", "set-url", "origin", secure_url], check=True)
+
 
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "commit", "-m", commit_msg], check=True)
