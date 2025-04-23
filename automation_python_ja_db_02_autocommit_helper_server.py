@@ -8,6 +8,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+# issue: docker dont need this,
+#        but run local, you need this
+from dotenv import load_dotenv
+load_dotenv()
 
 
 ## Harcode Libaray
@@ -56,25 +60,13 @@ def auto_git_commit():
     commit_msg = f"automation updated at {now_str}"
 
 
-    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
-    commit_msg = f"automation updated at {now_str}"
-
-    # Load GitHub credentials from env
+    # load github credential
     github_user = os.getenv("GITHUB_USER")
     github_token = os.getenv("GITHUB_TOKEN")
-    github_repo = os.getenv("GITHUB_REPO")
+    github_repo = os.getenv("GITHUB_REPO")  # Must be the full URL like h
 
     if not (github_user and github_token and github_repo):
-        print("⚠️ Detected local run: missing env variables. Setting fallback Git config for local test...")
-
-        # Optional: inject fake/testable values
-        github_user = "johnny"
-        github_token = "your-token-placeholder"
-        github_repo = "https://github.com/johnny/local-test-repo.git"
-
-        # You could also just skip the push step when running locally
-        print("💡 Suggestion: run this only inside Docker or add a .env file for full GitHub push.")
-
+        raise Exception("❌ Missing GITHUB_USER, GITHUB_TOKEN, or GITHUB_REPO in environment.")
 
     # Inject HTTPS URL with token
     secure_url = github_repo.replace("https://", f"https://{github_user}:{github_token}@")
