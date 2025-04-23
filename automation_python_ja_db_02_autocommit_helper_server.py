@@ -10,6 +10,28 @@ from googleapiclient.http import MediaFileUpload
 
 
 
+## Harcode Libaray
+import socket
+import platform
+#import os # <<duplicate
+
+def get_selfprogram_info():
+    return {
+        "program_name": os.path.basename(__file__),
+        "repo_folder": os.path.basename(os.getcwd()),
+        "device_info": {
+            "hostname": socket.gethostname(),
+            "ip_address": socket.gethostbyname(socket.gethostname()),
+            "os": platform.system(),
+            "os_version": platform.version(),
+            "machine": platform.machine()
+        }
+    }
+
+
+
+
+
 # === Configuration ===
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
@@ -34,13 +56,25 @@ def auto_git_commit():
     commit_msg = f"automation updated at {now_str}"
 
 
-    # load github credential
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    commit_msg = f"automation updated at {now_str}"
+
+    # Load GitHub credentials from env
     github_user = os.getenv("GITHUB_USER")
     github_token = os.getenv("GITHUB_TOKEN")
-    github_repo = os.getenv("GITHUB_REPO")  # Must be the full URL like h
+    github_repo = os.getenv("GITHUB_REPO")
 
     if not (github_user and github_token and github_repo):
-        raise Exception("❌ Missing GITHUB_USER, GITHUB_TOKEN, or GITHUB_REPO in environment.")
+        print("⚠️ Detected local run: missing env variables. Setting fallback Git config for local test...")
+
+        # Optional: inject fake/testable values
+        github_user = "johnny"
+        github_token = "your-token-placeholder"
+        github_repo = "https://github.com/johnny/local-test-repo.git"
+
+        # You could also just skip the push step when running locally
+        print("💡 Suggestion: run this only inside Docker or add a .env file for full GitHub push.")
+
 
     # Inject HTTPS URL with token
     secure_url = github_repo.replace("https://", f"https://{github_user}:{github_token}@")
@@ -63,6 +97,11 @@ def auto_git_commit():
 
 # === Upload Commit Log to Google Drive /log Folder ===
 def upload_commit_log(service, log_data):
+
+    # add env 
+    log_data["environment"] = get_selfprogram_info()
+
+
     # Ensure /log folder exists
     query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='log' and mimeType='application/vnd.google-apps.folder'"
     response = service.files().list(q=query, fields='files(id)').execute()
