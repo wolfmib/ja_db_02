@@ -11,6 +11,38 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import io
 
+
+
+
+# issue-apr-2025: despache , use timezone now
+from datetime import  timezone
+
+
+
+## ==== Harcode Libaray HEALTH===
+import socket
+import platform
+#import os # <<duplicate
+
+def get_selfprogram_info():
+    try:
+        ip_address = socket.gethostbyname(socket.gethostname())
+    except:
+        ip_address = "Unavailable"
+
+    return {
+        "program_name": os.path.basename(__file__),
+        "repo_folder": os.path.basename(os.getcwd()),
+        "device_info": {
+            "hostname": socket.gethostname(),
+            "ip_address": ip_address,
+            "os": platform.system(),
+            "os_version": platform.version(),
+            "machine": platform.machine()
+        }
+    }
+
+
 # === Configuration ===
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
@@ -21,7 +53,8 @@ LOCAL_HEALTH_LOG = 'health_helper_server.json'
 
 # === Database Config ===
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': 'db', #issue-apr-23  localhost >> db  ← this must match the service name in docker-compose
+    #'host': 'localhost',
     'port': 5432,
     'dbname': 'ja_clients',
     'user': 'ja_db',
@@ -58,10 +91,15 @@ def download_clients_json(service):
 
 # === Upload health log to /log ===
 def upload_log(service):
-    # Find or create 'log' folder inside javis_shell
+   # issue-03 duplicte log  apr-25-2025
     query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='log' and mimeType='application/vnd.google-apps.folder'"
     response = service.files().list(q=query, fields='files(id, name)').execute()
-    log_folder_id = response['files'][0]['id'] if response['files'] else None
+
+    log_folder_id = None
+    for folder in response.get('files', []):
+        if folder['name'] == 'log':
+            log_folder_id = folder['id']
+            break
 
     if not log_folder_id:
         file_metadata = {
@@ -76,13 +114,13 @@ def upload_log(service):
     file_metadata = {
         'name': 'health_helper_server.json',
         'parents': [log_folder_id],
-        'mimeType': 'application/json'
+        'mimeType': 'application/json',
     }
 
 
     # Always upload a new health log file with timestamp
-    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    file_metadata['name'] = f'health_ja_db_02_helper_server_{timestamp}.json'
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    file_metadata['name'] = f'health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
 
     service.files().create(body=file_metadata, media_body=media).execute()
     print(f"📤 Uploaded new health log: {file_metadata['name']} to /log")
@@ -93,6 +131,8 @@ def upload_log(service):
 def sync_clients_and_actions():
     service = get_drive_service()
     download_clients_json(service)
+
+
 
     with open(LOCAL_CLIENTS_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -159,6 +199,8 @@ def sync_clients_and_actions():
         "inserted_actions": inserted_actions,
         "skipped_duplicates": skipped_duplicates
     }
+
+    log["environment"] = get_selfprogram_info()
     with open(LOCAL_HEALTH_LOG, "w") as f:
         json.dump(log, f, indent=2)
     upload_log(service)

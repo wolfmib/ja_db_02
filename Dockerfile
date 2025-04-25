@@ -17,7 +17,14 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt || true
-RUN pip install --no-cache-dir google-api-python-client google-auth google-auth-oauthlib psycopg2-binary pandas
+# remove this later apr-2025: RUN pip install --no-cache-dir google-api-python-client google-auth google-auth-oauthlib psycopg2-binary pandas
+RUN pip install --no-cache-dir \
+    google-api-python-client \
+    google-auth \
+    google-auth-oauthlib \
+    psycopg2-binary \
+    pandas \
+    python-dotenv
 
 # Run both scripts in the background
 CMD ["bash", "-c", "python3 automation_python_ja_sync_action_helper_server.py & python3 automation_python_ja_db_02_autocommit_helper_server.py"]

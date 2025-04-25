@@ -11,6 +11,31 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+
+  superset:
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=supersecretkey123
+    volumes:
+      - ./superset_home:/app/superset_home
+    depends_on:
+      - db
+
+  pgweb:
+    image: sosedoff/pgweb
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - PGWEB_DATABASE_URL=postgres://ja_admin:securepass@db:5432/ja_clients?sslmode=disable
+    depends_on:
+      - db
+
+
   automation:
     build: .
     env_file:
@@ -19,7 +44,10 @@ services:
       - .:/app
     depends_on:
       - db
+    command: bash -c "python3 automation_python_ja_db_02_autocommit_helper_server.py & python3 automation_python_ja_db_02_sync_action_helper_server.py & python3 automation_python_ja_db_02_autosyncbackto_googledrive_helper.py"
+    
 
 volumes:
-  pgdata:
+  pgdata: {}
+
 

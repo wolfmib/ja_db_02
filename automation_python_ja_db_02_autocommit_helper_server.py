@@ -8,13 +8,19 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-# issue: docker dont need this,
+# issue-apr-2025: docker dont need this,
 #        but run local, you need this
 from dotenv import load_dotenv
 load_dotenv()
 
 
-## Harcode Libaray
+# issue-apr-2025: despache , use timezone now
+from datetime import  timezone
+
+
+
+
+## ==== Harcode Libaray ===
 import socket
 import platform
 #import os # <<duplicate
@@ -37,6 +43,50 @@ def get_selfprogram_info():
         }
     }
 
+## ====  Harcode Libaray  Depended get_selfprogram_info() ===
+def upload_health_info(service):
+    from datetime import datetime, timezone
+    import json
+
+    health_data = get_selfprogram_info()
+    health_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    filename = f"health__ja_db_02__automation__autocommit_helper01__{timestamp}.json"
+
+    with open(filename, "w") as f:
+        json.dump(health_data, f, indent=2)
+
+    # issue-03 duplicte log  apr-25-2025
+    query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='log' and mimeType='application/vnd.google-apps.folder'"
+    response = service.files().list(q=query, fields='files(id, name)').execute()
+
+    log_folder_id = None
+    for folder in response.get('files', []):
+        if folder['name'] == 'log':
+            log_folder_id = folder['id']
+            break
+
+
+
+    if not log_folder_id:
+        file_metadata = {
+            'name': 'log',
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': [JAVIS_SHELL_FOLDER_ID]
+        }
+        folder = service.files().create(body=file_metadata, fields='id').execute()
+        log_folder_id = folder['id']
+
+    media = MediaFileUpload(filename, mimetype='application/json')
+    file_metadata = {
+        'name': filename,
+        'parents': [log_folder_id],
+        'mimeType': 'application/json'
+    }
+    service.files().create(body=file_metadata, media_body=media).execute()
+    print(f"✅ Uploaded health info: {filename}")
+
 
 
 
@@ -46,6 +96,9 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
 COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 30 # health
+
+
 
 # === Get Google Drive Service ===
 def get_drive_service():
@@ -61,7 +114,8 @@ def get_drive_service():
 
 # === Perform Git Commit and Capture Metadata ===
 def auto_git_commit():
-    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    now = datetime.now(timezone.utc)
+    now_str = now.strftime("%Y-%m-%d %H:%M")
     commit_msg = f"automation updated at {now_str}"
 
 
@@ -114,7 +168,9 @@ def upload_commit_log(service, log_data):
         log_folder_id = log_folder['id']
 
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    log_filename = f'autocommit_ja_db_02_info_{timestamp}.json'
+
+    ## rename-base-on code-guide-01   apr-2025
+    log_filename = f'action_ja_db_02_automation_autocommit_helper01_{timestamp}.json'
     with open(log_filename, "w") as f:
         json.dump(log_data, f, indent=2)
 
@@ -130,13 +186,27 @@ def upload_commit_log(service, log_data):
 # === Main Loop ===
 if __name__ == "__main__":
     service = get_drive_service()
+    last_commit_time = time.time()
+    last_health_time = time.time()
+
     while True:
+        now = time.time()
+
         try:
-            commit_log = auto_git_commit()
-            upload_commit_log(service, commit_log)
+            if now - last_commit_time >= COMMIT_INTERVAL_MINUTES * 60:
+                commit_log = auto_git_commit()
+                upload_commit_log(service, commit_log)
+                last_commit_time = now
+                print("Sent Autocommit")
+
+            if now - last_health_time >= HEALTH_INTERVAL_MINUTES * 60:
+                upload_health_info(service)
+                last_health_time = now
+                print("Sent Health")
+
         except subprocess.CalledProcessError as e:
             print(f"❌ Git command failed: {e}")
         except Exception as ex:
             print(f"❌ Unexpected error: {ex}")
-        time.sleep(COMMIT_INTERVAL_MINUTES * 60)
 
+        time.sleep(30)  # check every 30 seconds for responsiveness
