@@ -1,5 +1,3 @@
-# health__ja_db_02__automation__syncbackto_gdrive_helper03__
-
 import psycopg2
 import json
 import os
@@ -13,29 +11,27 @@ import time
 from datetime import datetime, timezone
 from ja_tool import get_selfprogram_info
 
-
-
-os.makedirs("log", exist_ok=True)
-
-
 # === Configuration ===
-SCOPES = ['https://www.googleapis.com/auth/drive'] ## issue-apr-25, chose the same scope
+SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
 DRIVE_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'  # javis_shell
-SYNC_INTERVAL_MINUTES = 33
+SYNC_INTERVAL_MINUTES = 1
 
 
 
 
+#  issue using localhost 
+## docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ja_db_02-db-1
 
 DB_CONFIG = {
     "dbname": "ja_clients",
     "user": "ja_db",
     "password": "ja_123!",
-    "host": "db",  # inside Docker use service name
-                    #"host": "localhost",
-    "port": "5432"
+    #"host": "host.docker.internal",  # ✅ force connection to Docker Postgres
+    # "host": "172.18.0.2", # run following
+    "host": "localhost",
+    "port": "15432" # << test used 
 }
 
 def get_drive_service():
@@ -152,16 +148,9 @@ def upload_health_info(service):
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     # renaming base-on guide-01-code apr-2025
-    filename = f"health__ja_db_02__automation__syncbackto_gdrive_helper03__{timestamp}.json"
+    filename = f"log/health__ja_db_02__automation__syncbackto_gdrive_helper03__{timestamp}.json"
 
-
-    #fixed issue for the something..
-    log_dir = os.path.join(os.getcwd(), "log")
-    os.makedirs(log_dir, exist_ok=True)
-
-    openfilename = os.path.join(log_dir, filename)
-
-    with open(openfilename, "w") as f:
+    with open(filename, "w") as f:
         json.dump(health_data, f, indent=2)
 
     # Upload to same /log folder as before
@@ -178,7 +167,7 @@ def upload_health_info(service):
         folder = service.files().create(body=file_metadata, fields='id').execute()
         log_folder_id = folder['id']
 
-    media = MediaFileUpload(openfilename, mimetype='application/json')
+    media = MediaFileUpload(filename, mimetype='application/json')
     file_metadata = {
         'name': filename,
         'parents': [log_folder_id],

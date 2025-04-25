@@ -1,3 +1,6 @@
+# health__ja_db_02__automation__sync_action_helper02__
+
+
 import os
 import json
 import time
@@ -24,6 +27,9 @@ import socket
 import platform
 #import os # <<duplicate
 
+os.makedirs("log", exist_ok=True)
+
+
 def get_selfprogram_info():
     try:
         ip_address = socket.gethostbyname(socket.gethostname())
@@ -47,9 +53,9 @@ def get_selfprogram_info():
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CLIENT_SECRET_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-CHECK_INTERVAL_MINUTES = 31
+CHECK_INTERVAL_MINUTES = 32
 LOCAL_CLIENTS_JSON = 'latest_clients.json'
-LOCAL_HEALTH_LOG = 'health_helper_server.json'
+LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
 
 # === Database Config ===
 DB_CONFIG = {
@@ -120,7 +126,7 @@ def upload_log(service):
 
     # Always upload a new health log file with timestamp
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    file_metadata['name'] = f'health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
+    file_metadata['name'] = f'log/health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
 
     service.files().create(body=file_metadata, media_body=media).execute()
     print(f"📤 Uploaded new health log: {file_metadata['name']} to /log")

@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: ja_clients
     ports:
       - "5432:5432"
+      - "15432:5432"   # extra port for local testing/debug
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -44,7 +45,7 @@ services:
       - .:/app
     depends_on:
       - db
-    command: bash -c "python3 automation_python_ja_db_02_autocommit_helper_server.py & python3 automation_python_ja_db_02_sync_action_helper_server.py & python3 automation_python_ja_db_02_autosyncbackto_googledrive_helper.py"
+    command: bash -c "python3 automation_python_ja_db_02_autocommit_helper_server.py & python3 automation_python_ja_db_02_sync_action_helper_server.py & python3 automation_python_ja_db_02_autosyncbackto_googledrive_helper.py & wait"
     
 
 volumes:

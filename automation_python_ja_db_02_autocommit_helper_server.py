@@ -1,3 +1,5 @@
+# health__ja_db_02__automation__autocommit_helper01__
+
 import os
 import json
 import time
@@ -18,6 +20,7 @@ load_dotenv()
 from datetime import  timezone
 
 
+os.makedirs("log", exist_ok=True)
 
 
 ## ==== Harcode Libaray ===
@@ -52,9 +55,19 @@ def upload_health_info(service):
     health_data["timestamp"] = datetime.now(timezone.utc).isoformat()
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+
+
+
     filename = f"health__ja_db_02__automation__autocommit_helper01__{timestamp}.json"
 
-    with open(filename, "w") as f:
+    # issue , why the health still in the home, not inside log
+    log_dir = os.path.join(os.getcwd(), "log")
+    os.makedirs(log_dir, exist_ok=True)
+    Openfilename = os.path.join(log_dir, filename)
+    print("💡 Writing local health file to:",  Openfilename)
+
+
+    with open(Openfilename, "w") as f:
         json.dump(health_data, f, indent=2)
 
     # issue-03 duplicte log  apr-25-2025
@@ -78,14 +91,14 @@ def upload_health_info(service):
         folder = service.files().create(body=file_metadata, fields='id').execute()
         log_folder_id = folder['id']
 
-    media = MediaFileUpload(filename, mimetype='application/json')
+    media = MediaFileUpload(Openfilename, mimetype='application/json')
     file_metadata = {
         'name': filename,
         'parents': [log_folder_id],
         'mimeType': 'application/json'
     }
     service.files().create(body=file_metadata, media_body=media).execute()
-    print(f"✅ Uploaded health info: {filename}")
+    print(f"✅ Uploaded health info: {Openfilename}")
 
 
 
@@ -95,8 +108,8 @@ def upload_health_info(service):
 SCOPES = ['https://www.googleapis.com/auth/drive']
 JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
 CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 30 # health
+COMMIT_INTERVAL_MINUTES = 2  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 5 # health
 
 
 

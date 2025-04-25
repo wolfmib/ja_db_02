@@ -4,14 +4,14 @@ import os
 
 
 
-def get_selfprogram_info():
+def get_selfprogram_info(i_pass_programname):
     try:
         ip_address = socket.gethostbyname(socket.gethostname())
     except:
         ip_address = "Unavailable"
 
     return {
-        "program_name": os.path.basename(__file__),
+        "program_name":  i_pass_programname,#os.path.basename(__file__),
         "repo_folder": os.path.basename(os.getcwd()),
         "device_info": {
             "hostname": socket.gethostname(),
