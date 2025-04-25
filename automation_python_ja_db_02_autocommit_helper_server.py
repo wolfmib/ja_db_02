@@ -1,5 +1,13 @@
 # health__ja_db_02__automation__autocommit_helper01__
 
+# === Configuration ===
+SCOPES = ['https://www.googleapis.com/auth/drive']
+JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
+CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
+COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 35 # health
+
+
 import os
 import json
 import time
@@ -104,12 +112,7 @@ def upload_health_info(service):
 
 
 
-# === Configuration ===
-SCOPES = ['https://www.googleapis.com/auth/drive']
-JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
-CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-COMMIT_INTERVAL_MINUTES = 2  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 5 # health
+
 
 
 
