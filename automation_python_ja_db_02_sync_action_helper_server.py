@@ -126,7 +126,7 @@ def upload_log(service):
 
     # Always upload a new health log file with timestamp
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    file_metadata['name'] = f'log/health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
+    file_metadata['name'] = f'health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
 
     service.files().create(body=file_metadata, media_body=media).execute()
     print(f"📤 Uploaded new health log: {file_metadata['name']} to /log")
