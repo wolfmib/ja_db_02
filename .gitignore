@@ -7,6 +7,7 @@ __pycache__/
 clients.json
 *.json
 log/
+*.csv
 
 # C extensions
 *.so
