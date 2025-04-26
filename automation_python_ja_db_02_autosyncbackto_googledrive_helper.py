@@ -1,4 +1,6 @@
 # health__ja_db_02__automation__syncbackto_gdrive_helper03__
+# program: autosyncbackto_googeldrive_helper.py
+# purpose: auto sync back all tables , back to google-drever to centralized the schema and data 
 
 # === Configuration ===
 from ja_tool import get_google_env
@@ -10,7 +12,7 @@ CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
 
 # Local env
 DRIVE_FOLDER_ID = JAVIS_SHELL_FOLDER_ID # << dupplicase Drive_Folder = main folder
-SYNC_INTERVAL_MINUTES = 1
+SYNC_INTERVAL_MINUTES = 33
 
 
 import psycopg2

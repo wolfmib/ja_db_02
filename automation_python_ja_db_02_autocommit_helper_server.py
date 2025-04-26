@@ -1,4 +1,6 @@
 # health__ja_db_02__automation__autocommit_helper01__
+# progarm : autocommit_heper_server.py 
+# purpose : do the auto-commit every day and health every 30 mins
 
 # === Configuration ===
 from ja_tool import get_google_env
@@ -17,8 +19,8 @@ GITHUB_TOKEN=github_env["GITHUB_TOKEN"]
 GITHUB_REPO=github_env["GITHUB_REPO"]
     
 # Local env
-COMMIT_INTERVAL_MINUTES = 1  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 1 # health
+COMMIT_INTERVAL_MINUTES = 1440 # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 31 # health
 
 
 import os
