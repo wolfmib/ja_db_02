@@ -17,8 +17,8 @@ GITHUB_TOKEN=github_env["GITHUB_TOKEN"]
 GITHUB_REPO=github_env["GITHUB_REPO"]
     
 # Local env
-COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 35 # health
+COMMIT_INTERVAL_MINUTES = 1  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 1 # health
 
 
 import os
@@ -213,8 +213,8 @@ def upload_commit_log(service, log_data):
 
 
 
-
-    media = MediaFileUpload(log_filename, mimetype='application/json')
+    # fixed the bug for upload correct path
+    media = MediaFileUpload(openfilename, mimetype='application/json')
     file_metadata = {
         'name': log_filename,
         'parents': [log_folder_id],
