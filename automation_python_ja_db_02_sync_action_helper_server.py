@@ -1,12 +1,22 @@
 # health__ja_db_02__automation__sync_action_helper02__
 
-
 # === Configuration ===
-SCOPES = ['https://www.googleapis.com/auth/drive']
-JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
-CLIENT_SECRET_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
+from ja_tool import get_google_env
+from ja_tool import get_custom_env
+
+# google-env
+google_env = get_google_env()
+SCOPES = google_env["SCOPES"]
+JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
+CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
+
+# Custom json file name
+custom_env = get_custom_env()
+JA_DATA_FILE = custom_env["JA_DATA_FILE"]
+
+# Local env
 CHECK_INTERVAL_MINUTES = 32
-LOCAL_CLIENTS_JSON = 'latest_clients.json'
+LOCAL_CLIENTS_JSON = f'latest_{JA_DATA_FILE}'
 LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
 
 
@@ -81,13 +91,15 @@ def get_drive_service():
             token.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
-# === Download latest clients.json ===
+# === Download latest JA_DATA_FILE ===
 def download_clients_json(service):
-    query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='clients.json' and trashed=false"
+
+    
+    query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='{JA_DATA_FILE}' and trashed=false"
     results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     files = results.get('files', [])
     if not files:
-        raise Exception("clients.json not found in javis_shell.")
+        raise Exception(f"{JA_DATA_FILE} not found in javis_shell.")
     file_id = files[0]['id']
     request = service.files().get_media(fileId=file_id)
     fh = io.FileIO(LOCAL_CLIENTS_JSON, 'wb')
@@ -95,7 +107,10 @@ def download_clients_json(service):
     done = False
     while not done:
         status, done = downloader.next_chunk()
-    print("✅ Downloaded clients.json from Google Drive")
+    print(f"✅ Downloaded {JA_DATA_FILE} from Google Drive")
+
+
+
 
 # === Upload health log to /log ===
 def upload_log(service):

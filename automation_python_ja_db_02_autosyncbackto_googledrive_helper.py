@@ -1,5 +1,18 @@
 # health__ja_db_02__automation__syncbackto_gdrive_helper03__
 
+# === Configuration ===
+from ja_tool import get_google_env
+# google-env
+google_env = get_google_env()
+SCOPES = google_env["SCOPES"]
+JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
+CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
+
+# Local env
+DRIVE_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'  # javis_shell
+SYNC_INTERVAL_MINUTES = 33
+
+
 import psycopg2
 import json
 import os
@@ -18,12 +31,6 @@ from ja_tool import get_selfprogram_info
 os.makedirs("log", exist_ok=True)
 
 
-# === Configuration ===
-SCOPES = ['https://www.googleapis.com/auth/drive'] ## issue-apr-25, chose the same scope
-JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
-CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
-DRIVE_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'  # javis_shell
-SYNC_INTERVAL_MINUTES = 33
 
 
 

@@ -1,9 +1,22 @@
 # health__ja_db_02__automation__autocommit_helper01__
 
 # === Configuration ===
-SCOPES = ['https://www.googleapis.com/auth/drive']
-JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
-CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
+from ja_tool import get_google_env
+from ja_tool import get_github_env
+
+# google-env
+google_env = get_google_env()
+SCOPES = google_env["SCOPES"]
+JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
+CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
+
+# github-env
+github_env = get_github_env()
+GITHUB_USER=github_env["GITHUB_USER"]
+GITHUB_TOKEN=github_env["GITHUB_TOKEN"]
+GITHUB_REPO=github_env["GITHUB_REPO"]
+    
+# Local env
 COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
 HEALTH_INTERVAL_MINUTES = 35 # health
 
@@ -136,9 +149,9 @@ def auto_git_commit():
 
 
     # load github credential
-    github_user = os.getenv("GITHUB_USER")
-    github_token = os.getenv("GITHUB_TOKEN")
-    github_repo = os.getenv("GITHUB_REPO")  # Must be the full URL like h
+    github_user = GITHUB_USER
+    github_token = GITHUB_TOKEN
+    github_repo = GITHUB_REPO
 
     if not (github_user and github_token and github_repo):
         raise Exception("❌ Missing GITHUB_USER, GITHUB_TOKEN, or GITHUB_REPO in environment.")
@@ -186,9 +199,20 @@ def upload_commit_log(service, log_data):
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
 
     ## rename-base-on code-guide-01   apr-2025
+    ## put the local to log/
+
     log_filename = f'action_ja_db_02_automation_autocommit_helper01_{timestamp}.json'
-    with open(log_filename, "w") as f:
+
+    #fixed issue for the something..
+    log_dir = os.path.join(os.getcwd(), "log")
+    os.makedirs(log_dir, exist_ok=True)
+
+    openfilename = os.path.join(log_dir, log_filename)
+    with open(openfilename, "w") as f:
         json.dump(log_data, f, indent=2)
+
+
+
 
     media = MediaFileUpload(log_filename, mimetype='application/json')
     file_metadata = {
