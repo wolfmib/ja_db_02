@@ -1,4 +1,5 @@
 services:
+
   db:
     image: postgres:15
     restart: always
@@ -8,9 +9,20 @@ services:
       POSTGRES_DB: ja_clients
     ports:
       - "5432:5432"
-      - "15432:5432"   # extra port for local testing/debug
+      - "15432:5432" #extra port for local testing/debug
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+      
+      # issue-apr-2025✅ Override pg_hba.conf to allow host-based password auth (fix pgweb access issue)
+      #- ./pg_config/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
+      
+      # issue-apr-2025✅ Custom postgresql.conf to allow external connections (listen_addresses='*')
+      #- ./pg_config/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+
+    # issue-apr-2025✅ Force PostgreSQL to use our custom postgresql.conf on startup
+    #command: postgres -c config_file=/var/lib/postgresql/data/postgresql.conf
+
 
 
   superset:
