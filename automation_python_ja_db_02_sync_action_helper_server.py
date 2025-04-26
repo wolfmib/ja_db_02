@@ -15,7 +15,7 @@ custom_env = get_custom_env()
 JA_DATA_FILE = custom_env["JA_DATA_FILE"]
 
 # Local env
-CHECK_INTERVAL_MINUTES = 32
+CHECK_INTERVAL_MINUTES = 1
 LOCAL_CLIENTS_JSON = f'latest_{JA_DATA_FILE}'
 LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
 

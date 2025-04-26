@@ -14,7 +14,7 @@ load_dotenv()  # Works locally
 
 def get_custom_env():
 
-    data_jsonfilename = os.getenv("")
+    data_jsonfilename = os.getenv("JA_DATA_FILE")
 
     missing = []
     if not data_jsonfilename:
@@ -24,7 +24,7 @@ def get_custom_env():
         raise ValueError("\n\n[❌ SELF-CUSTOM Env Missing Configuration]\n" + "\n".join(missing))
 
     return {
-        "JA_DATA_FILE": [data_jsonfilename],
+        "JA_DATA_FILE": data_jsonfilename,
     }
 
   

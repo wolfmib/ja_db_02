@@ -9,8 +9,8 @@ JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
 CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
 
 # Local env
-DRIVE_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'  # javis_shell
-SYNC_INTERVAL_MINUTES = 33
+DRIVE_FOLDER_ID = JAVIS_SHELL_FOLDER_ID # << dupplicase Drive_Folder = main folder
+SYNC_INTERVAL_MINUTES = 1
 
 
 import psycopg2

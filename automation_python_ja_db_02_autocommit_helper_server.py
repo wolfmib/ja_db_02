@@ -17,8 +17,8 @@ GITHUB_TOKEN=github_env["GITHUB_TOKEN"]
 GITHUB_REPO=github_env["GITHUB_REPO"]
     
 # Local env
-COMMIT_INTERVAL_MINUTES = 1440  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 35 # health
+COMMIT_INTERVAL_MINUTES = 3  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 1 # health
 
 
 import os
