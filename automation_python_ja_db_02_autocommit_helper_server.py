@@ -163,7 +163,20 @@ def auto_git_commit():
     subprocess.run(["git", "remote", "set-url", "origin", secure_url], check=True)
 
 
+    # Always pull first to sync latest
+    subprocess.run(["git", "pull", "--rebase"], check=True)
+
+    # add Changes
     subprocess.run(["git", "add", "."], check=True)
+
+    # Check if there are staged changes
+    result = subprocess.run(["git", "diff", "--cached", "--quiet"])
+    if result.returncode == 0:
+        print("⚡ No changes to commit.")
+        return {"timestamp": datetime.utcnow().isoformat(), "commit_message": "No changes", "changed_files": []}
+
+
+
     subprocess.run(["git", "commit", "-m", commit_msg], check=True)
     subprocess.run(["git", "push"], check=True)
 
