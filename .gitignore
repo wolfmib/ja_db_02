@@ -7,9 +7,6 @@ __pycache__/
 clients.json
 *.json
 log/
-# Ignore Superset DB
-superset_home/superset.db
-
 
 *.csv
 
