@@ -1,28 +1,3 @@
-# health__ja_db_02__automation__autocommit_helper01__
-# progarm : autocommit_heper_server.py 
-# purpose : do the auto-commit every day and health every 30 mins
-
-# === Configuration ===
-from ja_tool import get_google_env
-from ja_tool import get_github_env
-
-# google-env
-google_env = get_google_env()
-SCOPES = google_env["SCOPES"]
-JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
-CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
-
-# github-env
-github_env = get_github_env()
-GITHUB_USER=github_env["GITHUB_USER"]
-GITHUB_TOKEN=github_env["GITHUB_TOKEN"]
-GITHUB_REPO=github_env["GITHUB_REPO"]
-    
-# Local env
-COMMIT_INTERVAL_MINUTES = 1440 # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
-HEALTH_INTERVAL_MINUTES = 31 # health
-
-
 import os
 import json
 import time
@@ -43,7 +18,6 @@ load_dotenv()
 from datetime import  timezone
 
 
-os.makedirs("log", exist_ok=True)
 
 
 ## ==== Harcode Libaray ===
@@ -78,19 +52,9 @@ def upload_health_info(service):
     health_data["timestamp"] = datetime.now(timezone.utc).isoformat()
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-
-
-
     filename = f"health__ja_db_02__automation__autocommit_helper01__{timestamp}.json"
 
-    # issue , why the health still in the home, not inside log
-    log_dir = os.path.join(os.getcwd(), "log")
-    os.makedirs(log_dir, exist_ok=True)
-    Openfilename = os.path.join(log_dir, filename)
-    print("💡 Writing local health file to:",  Openfilename)
-
-
-    with open(Openfilename, "w") as f:
+    with open(filename, "w") as f:
         json.dump(health_data, f, indent=2)
 
     # issue-03 duplicte log  apr-25-2025
@@ -114,20 +78,25 @@ def upload_health_info(service):
         folder = service.files().create(body=file_metadata, fields='id').execute()
         log_folder_id = folder['id']
 
-    media = MediaFileUpload(Openfilename, mimetype='application/json')
+    media = MediaFileUpload(filename, mimetype='application/json')
     file_metadata = {
         'name': filename,
         'parents': [log_folder_id],
         'mimeType': 'application/json'
     }
     service.files().create(body=file_metadata, media_body=media).execute()
-    print(f"✅ Uploaded health info: {Openfilename}")
+    print(f"✅ Uploaded health info: {filename}")
 
 
 
 
 
-
+# === Configuration ===
+SCOPES = ['https://www.googleapis.com/auth/drive']
+JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
+CREDENTIALS_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
+COMMIT_INTERVAL_MINUTES = 1  # ⏱️ Lets do it one day, its .. 24*60 = 1440 mins  Set your schedule here
+HEALTH_INTERVAL_MINUTES = 2 # health
 
 
 
@@ -151,9 +120,9 @@ def auto_git_commit():
 
 
     # load github credential
-    github_user = GITHUB_USER
-    github_token = GITHUB_TOKEN
-    github_repo = GITHUB_REPO
+    github_user = os.getenv("GITHUB_USER")
+    github_token = os.getenv("GITHUB_TOKEN")
+    github_repo = os.getenv("GITHUB_REPO")  # Must be the full URL like h
 
     if not (github_user and github_token and github_repo):
         raise Exception("❌ Missing GITHUB_USER, GITHUB_TOKEN, or GITHUB_REPO in environment.")
@@ -201,22 +170,11 @@ def upload_commit_log(service, log_data):
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
 
     ## rename-base-on code-guide-01   apr-2025
-    ## put the local to log/
-
     log_filename = f'action_ja_db_02_automation_autocommit_helper01_{timestamp}.json'
-
-    #fixed issue for the something..
-    log_dir = os.path.join(os.getcwd(), "log")
-    os.makedirs(log_dir, exist_ok=True)
-
-    openfilename = os.path.join(log_dir, log_filename)
-    with open(openfilename, "w") as f:
+    with open(log_filename, "w") as f:
         json.dump(log_data, f, indent=2)
 
-
-
-    # fixed the bug for upload correct path
-    media = MediaFileUpload(openfilename, mimetype='application/json')
+    media = MediaFileUpload(log_filename, mimetype='application/json')
     file_metadata = {
         'name': log_filename,
         'parents': [log_folder_id],

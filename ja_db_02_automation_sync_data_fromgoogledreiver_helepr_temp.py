@@ -1,62 +1,51 @@
-# health__ja_db_02__automation__sync_action_helper02__
-# program: sync_action_helper_server.py
-# purpose: load teh data  (e.g. clients.json) from google drive and udpted locally DB(docker-containetr)
-
-# === Configuration ===
-from ja_tool import get_google_env
-from ja_tool import get_custom_env
-
-# google-env
-google_env = get_google_env()
-SCOPES = google_env["SCOPES"]
-JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
-CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
-
-# Custom json file name
-custom_env = get_custom_env()
-JA_DATA_FILE = custom_env["JA_DATA_FILE"]
-
-# Local env
-CHECK_INTERVAL_MINUTES = 32
-LOCAL_CLIENTS_JSON = f'latest_{JA_DATA_FILE}'
-LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
-
+"""
+Template: ja_db_02_automation_sync_data_fromgoogledreiver_helepr_temp.py
+Purpose: Sync structured data from Google Drive to PostgreSQL with health monitoring
+Editable by: Developer (adapt fields, schema mapping, filenames)
+"""
 
 import os
 import json
 import time
 import uuid
-from datetime import datetime
+import socket
+import platform
 import psycopg2
-import pandas as pd
+from datetime import datetime, timezone
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import io
 
+# Load environment variables
+load_dotenv()
 
+# === ENV Configuration ===
+SCOPES = [os.getenv("GOOGLE_SCOPES")]
+JAVIS_SHELL_FOLDER_ID = os.getenv("JAVIS_SHELL_FOLDER_ID")
+CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
+JA_DATA_FILE = os.getenv("JA_DATA_FILE")  # e.g. clients.json
+CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", 30))
 
-
-# issue-apr-2025: despache , use timezone now
-from datetime import  timezone
-
-
-
-## ==== Harcode Libaray HEALTH===
-import socket
-import platform
-#import os # <<duplicate
-
+LOCAL_CLIENTS_JSON = f'latest_{JA_DATA_FILE}'
+LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
 os.makedirs("log", exist_ok=True)
 
+DB_CONFIG = {
+    'host': 'db',  # docker-compose service name
+    'port': 5432,
+    'dbname': 'ja_clients',
+    'user': 'ja_db',
+    'password': 'ja_123!'
+}
 
 def get_selfprogram_info():
     try:
         ip_address = socket.gethostbyname(socket.gethostname())
     except:
         ip_address = "Unavailable"
-
     return {
         "program_name": os.path.basename(__file__),
         "repo_folder": os.path.basename(os.getcwd()),
@@ -69,103 +58,66 @@ def get_selfprogram_info():
         }
     }
 
-
-
-# === Database Config ===
-DB_CONFIG = {
-    'host': 'db', #issue-apr-23  localhost >> db  ← this must match the service name in docker-compose
-    #'host': 'localhost',
-    'port': 5432,
-    'dbname': 'ja_clients',
-    'user': 'ja_db',
-    'password': 'ja_123!'
-}
-
-# === Google Drive Auth ===
 def get_drive_service():
     creds = None
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     else:
-        flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
+        flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
         creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
-# === Download latest JA_DATA_FILE ===
-def download_clients_json(service):
-
-    
+def download_data_json(service):
     query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='{JA_DATA_FILE}' and trashed=false"
     results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     files = results.get('files', [])
     if not files:
-        raise Exception(f"{JA_DATA_FILE} not found in javis_shell.")
+        raise Exception(f"{JA_DATA_FILE} not found in Google Drive folder.")
     file_id = files[0]['id']
     request = service.files().get_media(fileId=file_id)
     fh = io.FileIO(LOCAL_CLIENTS_JSON, 'wb')
     downloader = MediaIoBaseDownload(fh, request)
     done = False
     while not done:
-        status, done = downloader.next_chunk()
+        _, done = downloader.next_chunk()
     print(f"✅ Downloaded {JA_DATA_FILE} from Google Drive")
 
-
-
-
-# === Upload health log to /log ===
-def upload_log(service):
-   # issue-03 duplicte log  apr-25-2025
+def upload_health_log(service, data):
+    data["timestamp"] = datetime.now(timezone.utc).isoformat()
+    data["environment"] = get_selfprogram_info()
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    filename = f"log/health__ja_db_02__automation__sync_fromdrive__{timestamp}.json"
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=2)
     query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='log' and mimeType='application/vnd.google-apps.folder'"
     response = service.files().list(q=query, fields='files(id, name)').execute()
-
-    log_folder_id = None
-    for folder in response.get('files', []):
-        if folder['name'] == 'log':
-            log_folder_id = folder['id']
-            break
-
+    log_folder_id = response['files'][0]['id'] if response['files'] else None
     if not log_folder_id:
-        file_metadata = {
+        log_folder = service.files().create(body={
             'name': 'log',
             'mimeType': 'application/vnd.google-apps.folder',
             'parents': [JAVIS_SHELL_FOLDER_ID]
-        }
-        log_folder = service.files().create(body=file_metadata, fields='id').execute()
+        }, fields='id').execute()
         log_folder_id = log_folder['id']
-
-    media = MediaFileUpload(LOCAL_HEALTH_LOG, mimetype='application/json')
-    file_metadata = {
-        'name': 'health_helper_server.json',
+    media = MediaFileUpload(filename, mimetype='application/json')
+    service.files().create(body={
+        'name': os.path.basename(filename),
         'parents': [log_folder_id],
-        'mimeType': 'application/json',
-    }
+        'mimeType': 'application/json'
+    }, media_body=media).execute()
+    print(f"📤 Uploaded health log: {filename}")
 
-
-    # Always upload a new health log file with timestamp
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    file_metadata['name'] = f'health__ja_db_02__automation__sync_action_helper02__{timestamp}.json'
-
-    service.files().create(body=file_metadata, media_body=media).execute()
-    print(f"📤 Uploaded new health log: {file_metadata['name']} to /log")
-
-
-
-# === Core sync logic ===
-def sync_clients_and_actions():
+def sync_data():
     service = get_drive_service()
-    download_clients_json(service)
-
-
-
+    download_data_json(service)
     with open(LOCAL_CLIENTS_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
 
-    # Build client_name → client_id lookup
     cur.execute("SELECT client_id, client_name FROM clients")
     existing_clients = cur.fetchall()
     client_map = {name.strip(): cid for cid, name in existing_clients}
@@ -192,13 +144,11 @@ def sync_clients_and_actions():
             date_str = log.get("date", "").strip()
             if not context:
                 continue
-
             try:
                 updated_at = datetime.strptime(date_str, "%Y-%m-%d-%H-%M")
             except:
                 continue
 
-            # Check for duplicates
             cur.execute("""
                 SELECT 1 FROM client_actions
                 WHERE client_id = %s AND comment = %s AND updated_at = %s
@@ -217,27 +167,19 @@ def sync_clients_and_actions():
     cur.close()
     conn.close()
 
-    # Save health log
-    log = {
-        "timestamp": datetime.utcnow().isoformat(),
+    log_summary = {
         "inserted_clients": inserted_clients,
         "inserted_actions": inserted_actions,
         "skipped_duplicates": skipped_duplicates
     }
-
-    log["environment"] = get_selfprogram_info()
-    with open(LOCAL_HEALTH_LOG, "w") as f:
-        json.dump(log, f, indent=2)
-    upload_log(service)
+    upload_health_log(service, log_summary)
     print("✅ Sync complete")
 
-# === Loop forever every X minutes ===
 if __name__ == "__main__":
     while True:
         try:
-            sync_clients_and_actions()
+            sync_data()
         except Exception as e:
             print(f"❌ Error: {e}")
         time.sleep(CHECK_INTERVAL_MINUTES * 60)
-
 

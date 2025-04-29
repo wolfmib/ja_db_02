@@ -1,27 +1,3 @@
-# health__ja_db_02__automation__sync_action_helper02__
-# program: sync_action_helper_server.py
-# purpose: load teh data  (e.g. clients.json) from google drive and udpted locally DB(docker-containetr)
-
-# === Configuration ===
-from ja_tool import get_google_env
-from ja_tool import get_custom_env
-
-# google-env
-google_env = get_google_env()
-SCOPES = google_env["SCOPES"]
-JAVIS_SHELL_FOLDER_ID = google_env["JAVIS_SHELL_FOLDER_ID"]
-CREDENTIALS_FILE = google_env["CREDENTIALS_FILE"]
-
-# Custom json file name
-custom_env = get_custom_env()
-JA_DATA_FILE = custom_env["JA_DATA_FILE"]
-
-# Local env
-CHECK_INTERVAL_MINUTES = 32
-LOCAL_CLIENTS_JSON = f'latest_{JA_DATA_FILE}'
-LOCAL_HEALTH_LOG = 'log/health_helper_server.json'
-
-
 import os
 import json
 import time
@@ -48,9 +24,6 @@ import socket
 import platform
 #import os # <<duplicate
 
-os.makedirs("log", exist_ok=True)
-
-
 def get_selfprogram_info():
     try:
         ip_address = socket.gethostbyname(socket.gethostname())
@@ -70,11 +43,19 @@ def get_selfprogram_info():
     }
 
 
+# === Configuration ===
+
+SCOPES = ['https://www.googleapis.com/auth/drive']
+JAVIS_SHELL_FOLDER_ID = '1sSqu2eQQydKjy-WIZzXfluuk6EoTfAE4'
+CLIENT_SECRET_FILE = 'client_secret_542560336178-nd8m0bre9sl9ak89m6v9n90paj87q4p5.apps.googleusercontent.com.json'
+CHECK_INTERVAL_MINUTES = 31
+LOCAL_CLIENTS_JSON = 'latest_clients.json'
+LOCAL_HEALTH_LOG = 'health_helper_server.json'
 
 # === Database Config ===
 DB_CONFIG = {
-    'host': 'db', #issue-apr-23  localhost >> db  ← this must match the service name in docker-compose
-    #'host': 'localhost',
+    #'host': 'db', #issue-apr-23  localhost >> db  ← this must match the service name in docker-compose
+    'host': 'localhost',
     'port': 5432,
     'dbname': 'ja_clients',
     'user': 'ja_db',
@@ -93,15 +74,13 @@ def get_drive_service():
             token.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
-# === Download latest JA_DATA_FILE ===
+# === Download latest clients.json ===
 def download_clients_json(service):
-
-    
-    query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='{JA_DATA_FILE}' and trashed=false"
+    query = f"'{JAVIS_SHELL_FOLDER_ID}' in parents and name='clients.json' and trashed=false"
     results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
     files = results.get('files', [])
     if not files:
-        raise Exception(f"{JA_DATA_FILE} not found in javis_shell.")
+        raise Exception("clients.json not found in javis_shell.")
     file_id = files[0]['id']
     request = service.files().get_media(fileId=file_id)
     fh = io.FileIO(LOCAL_CLIENTS_JSON, 'wb')
@@ -109,10 +88,7 @@ def download_clients_json(service):
     done = False
     while not done:
         status, done = downloader.next_chunk()
-    print(f"✅ Downloaded {JA_DATA_FILE} from Google Drive")
-
-
-
+    print("✅ Downloaded clients.json from Google Drive")
 
 # === Upload health log to /log ===
 def upload_log(service):
