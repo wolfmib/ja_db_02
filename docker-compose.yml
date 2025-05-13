@@ -59,6 +59,27 @@ services:
       - db
     command: bash -c "python3 automation_python_ja_db_02_autocommit_helper_server.py & python3 automation_python_ja_db_02_sync_action_helper_server.py & python3 automation_python_ja_db_02_autosyncbackto_googledrive_helper.py & wait"
     
+  flink-jobmanager:
+    image: flink:1.17
+    restart: always
+    ports:
+      - "8082:8081"  # Flink Web UI
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    command: jobmanager
+    depends_on:
+      - db
+
+  flink-taskmanager:
+    image: flink:1.17
+    restart: always
+    depends_on:
+      - flink-jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    command: taskmanager
+
+
 
 volumes:
   pgdata: {}

@@ -10,4 +10,7 @@ open http://localhost:8081
 echo "BI Opening superset UI ... http://localhost:8088"
 open http://localhost:8088
 
+echo "Flink Services UP .... http://localhost:8082"
+open http://localhost:8082/
 
+echo "Current activated 3 servcies"
