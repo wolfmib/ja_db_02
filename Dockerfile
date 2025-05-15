@@ -19,6 +19,7 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt || true
 # remove this later apr-2025: RUN pip install --no-cache-dir google-api-python-client google-auth google-auth-oauthlib psycopg2-binary pandas
 RUN pip install --no-cache-dir \
+    kafka-python \
     google-api-python-client \
     google-auth \
     google-auth-oauthlib \
