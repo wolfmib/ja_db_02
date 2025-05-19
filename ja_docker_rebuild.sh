@@ -14,3 +14,12 @@ echo "Flink Services UP .... http://localhost:8082"
 open http://localhost:8082/
 
 echo "Current activated 3 servcies"
+
+
+echo "| Prompt        | Value you can use                  |"
+echo "|---------------|------------------------------------|"
+echo "| Username      | `admin`                            |"
+echo "| User first name | `John`                           |"
+echo "| User last name  | `Hung`                           |"
+echo "| Email         | `john@jagroupai.com`               |"
+echo "| Password      | your choice, e.g. `admin123!`      |"
